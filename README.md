@@ -1,9 +1,19 @@
-# Claude Code Workflow
+# Claude Code Case Studies
 
-Claude Code를 매 세션 실제로 불러오는 설정과, 세션 로그로 검증한 실사용
-사례를 함께 정리했습니다. 프레임워크 원본 파일([SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework))은
-이 레포에 복제해두지 않고 원본 링크로 대체했고, 직접 만든 `Skills/`,
-`Commands/`만 실제 파일로 들어 있습니다.
+Claude Code를 실제로 어떻게 쓰고 있는지, **세션 로그로 확인된 사례만** 정리한
+레포입니다. 설정만 해두고 실행 기록이 없는 기능은 사례에 넣지 않고, 아래
+"구성은 됐지만 아직 사용 안 한 기능"에 따로 모아뒀습니다.
+
+매 세션 로드되는 설정 파일(`CLAUDE.md`, 규칙·모드·MCP 라우팅 문서)과 직접 만든
+Skills/Commands는 [superclaude-config](https://github.com/YangJinmo/superclaude-config)에
+있습니다. 이 레포는 그 설정을 **어떻게 썼는가**만 다룹니다.
+
+## 검증 방법
+
+Claude Code는 세션마다 대화 전체를 `~/.claude/projects/<프로젝트 경로>/<세션 ID>.jsonl`에
+남깁니다. 각 줄의 `tool_use` 블록(도구 이름·입력)을 세서 "실제로 호출됐는가"를
+판단했고, 사례에 적은 호출 횟수·서브에이전트 수·커밋 내용은 모두 이 로그에서
+집계한 값입니다. 설정 문서에 적혀 있다는 것만으로는 사용 사례로 치지 않았습니다.
 
 ## 실증된 사용 사례
 
@@ -41,16 +51,29 @@ Claude Code를 매 세션 실제로 불러오는 설정과, 세션 로그로 검
 - `subprocess.run` 3곳 중 2곳에 `timeout`과 예외 처리 누락 → 외부 프로세스 행 시 무한 대기
 - 클립보드 복사 시 Windows `clip.exe`는 UTF-8이 아닌 콘솔 코드페이지를 쓰는데 항상 UTF-8로 인코딩
 
-### 3. 커스텀 스킬 제작 및 활용
-**2026-08-07 ~ 2026-08-30**
+### 3. 커스텀 스킬 제작과 실사용 기반 개선
+**2026-08-07 ~ 2026-10-05**
 
 - **`tube-info` (08-07)**: 유튜브 URL을 넣으면 제목/조회수/자막/타임라인을 추출하는
   스크립트를 직접 작성한 뒤, `skill-creator`로 재사용 가능한 스킬로 전환
-- **`app-mockup` (08-28, 08-30)**: 앱 스크린샷을 아이폰/갤럭시 기기 프레임에 합성해
-  배경 투명 1920x1080 이미지로 만드는 스킬. Somvely 프로젝트에서 홈/필터/상품/장바구니/결제
-  화면 5장을 이 스킬로 일괄 처리
 - **`karpathy-guidelines` (08-26)**: 과설계 방지 가이드라인 스킬이 의도대로 트리거되는지
   동작 테스트 (실제 코드 리뷰 적용 사례는 아직 없음)
+- **`app-mockup` (08-26 ~ 10-05, 9개 세션)**: 앱 스크린샷을 아이폰/갤럭시 기기 프레임에
+  합성해 배경 투명 1920x1080 이미지로 만드는 스킬. Somvely, 엄선, Hoogi, BuyeoTravel 등
+  여러 앱의 홍보용 목업을 이 스킬로 만들었고, **쓰다가 나온 문제를 그때그때 스킬 문서와
+  스크립트에 되먹임**하는 식으로 다듬어 왔습니다:
+  - iOS 화면 녹화 빨간 캡슐을 지우다가 바로 아래 빨간 앱 로고("엄선") 위쪽까지 같이
+    뭉개짐 → 색만 보지 않고 연결요소 분석으로 "화면 맨 위에 붙은 알약 모양" 덩어리만
+    지우도록 스크립트 수정, 처리 후 로고 영역까지 확대 비교하는 검증 단계 추가
+  - 투명 배경을 마젠타 키잉으로 만들었더니 둥근 모서리·그림자 경계에 핑크 얼룩이 남음 →
+    Chrome 헤드리스의 진짜 알파 채널 렌더링(`--default-background-color=00000000`)으로 교체
+  - "프레임 적용 안 함"을 골랐는데 둥근 모서리·그림자가 들어가 재작업 → 이 옵션의 기본값을
+    "어떤 스타일링도 추가하지 않음"으로 문서에 명시
+  - (10-05) CSS 프레임 안쪽 모서리를 따라 밝은 회색 라인 발생 → 렌더 결과 픽셀 값을
+    직접 찍어 화면 영역의 흰 배경이 둥근 경계의 안티앨리어싱 픽셀로 섞여 비치는 것이
+    원인임을 확인, 배경을 베젤 색으로 바꾸고 모든 치수를 정수 px로 반올림해 해결
+  - 실물 기기 프레임 PNG(Design at Meta)의 라이선스를 확인해 재배포 금지 조항 때문에
+    공개 저장소에는 올리지 않도록 `.gitignore`로 제외
 
 ### 4. Playwright MCP 브라우저 자동화
 **2026-08-27**
@@ -60,78 +83,39 @@ Claude Code를 매 세션 실제로 불러오는 설정과, 세션 로그로 검
 `browser_evaluate` 흐름을 반복 실행 (총 25회 호출). 코드 수정 후 실제 브라우저에서
 동작을 재현·확인하며 반복 검증하는 용도로 사용.
 
-## 구성
+### 5. 설계 → 계획 → 서브에이전트 구현까지 이어지는 개발 사이클
+**2026-09-12 · [SecureAuthKit](https://github.com/YangJinmo/SecureAuthKit) (iOS 인증 SDK 예제)**
 
-`CLAUDE.md`는 Claude Code가 세션 시작 시 읽는 진입점 파일로, 아래 설정
-파일들을 전부 import합니다. 파일 자체는 [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework)
-원본을 그대로 쓰고 있어서 이 레포에 복제해두지 않았고, 링크는 전부
-원본 레포를 가리킵니다. 실제로 매 세션 로드되는 설정이지 데모용이
-아닙니다.
+Superpowers 스킬 체인(`brainstorming` → `writing-plans` → `using-git-worktrees` →
+`subagent-driven-development` → `finishing-a-development-branch`)으로 아이디어
+단계부터 PR까지 한 세션에서 진행. 생체인증 + Keychain 토큰 저장 SDK와 SwiftUI 데모 앱.
 
-### Behavioral Modes
-
-| 모드 | 용도 |
-|---|---|
-| [Brainstorming](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_Brainstorming.md) | 모호한 요청에 대한 소크라테스식 질문 |
-| [Task Management](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_Task_Management.md) | 다단계 작업의 계층적 계획·메모리 관리 |
-| [Orchestration](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_Orchestration.md) | 작업별 최적 도구/MCP 서버 선택 |
-| [Introspection](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_Introspection.md) | 에러·복잡한 판단 이후 메타인지적 자기 점검 |
-| [Deep Research](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_DeepResearch.md) | 근거 기반, 출처 명시 리서치 |
-| [Token Efficiency](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_Token_Efficiency.md) | 컨텍스트 압박 시 기호 기반 압축 커뮤니케이션 |
-| [Business Panel](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_Business_Panel.md) | Christensen·Porter 등 9명의 경영 프레임워크로 전략 문서를 다각도로 분석 |
-
-### MCP 서버 라우팅 규칙
-
-아래 문서들은 각 서버를 언제 선택해야 하는지 정의한 규칙입니다
-(예: 공식 문서 조회는 Context7, 다단계 추론은 Sequential, 브라우저 테스트는
-Playwright). **다만 이 중 실제 호출 이력이 확인된 것은 Playwright뿐입니다**
-(위 "실증된 사용 사례" 4번). 나머지는 라우팅 규칙만 구성해뒀고 실사용 검증은
-아직입니다.
-
-### Core Rules & Principles
-
-- [`RULES.md`](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/core/RULES.md) — 세션 워크플로우, Git 안전 수칙, 스코프 규율
-- [`PRINCIPLES.md`](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/core/PRINCIPLES.md) — SOLID, DRY/KISS/YAGNI, 근거 기반 의사결정
-- [`FLAGS.md`](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/core/FLAGS.md) — 모드/깊이/MCP 선택을 수동으로 override하는 플래그
-- [`RESEARCH_CONFIG.md`](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/core/RESEARCH_CONFIG.md) — 딥리서치 워크플로우 기본값
-
-### Skills
-
-요청이 스킬 설명과 매칭되면 자동으로 트리거되는 커스텀 스킬:
-
-| Skill | 용도 |
-|---|---|
-| [Skills/tube-info](Skills/tube-info/SKILL.md) | TubeAlfred MCP로 유튜브 채널/영상 정보·챕터·전체 자막 요약 |
-| [Skills/app-mockup](Skills/app-mockup/SKILL.md) | 앱 스크린샷을 아이폰/갤럭시 기기 목업 프레임에 합성 (프레임 PNG는 라이선스상 저장소 미포함) |
-
-### Commands
-
-스킬에 `/이름` 형태의 진입점을 붙인 얇은 래퍼 (로직 중복 없음):
-
-| Command | 호출 대상 |
-|---|---|
-| [Commands/tube-info.md](Commands/tube-info.md) | `/tube-info <url>` → Skills/tube-info |
-| [Commands/app-mockup.md](Commands/app-mockup.md) | `/app-mockup` → Skills/app-mockup |
-
-### 사용법
-
-프레임워크 설정 파일은 [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework)를
-설치하면 따라옵니다. `~/.claude/`(전역) 또는 `.claude/`(프로젝트별)에 두고
-자신의 `CLAUDE.md`에서 `@파일명.md`로 import하면 됩니다. 이 레포에서 실제로
-가져다 쓸 수 있는 건 `Skills/`, `Commands/`뿐입니다 — Skill은
-`~/.claude/skills/<name>/SKILL.md`, Command는 `~/.claude/commands/<name>.md`에
-넣습니다.
+1. **설계**: 질문으로 방향을 좁혀 A안 선택 → 설계 스펙 문서 작성·커밋
+2. **계획**: 8개 태스크(모델 → Keychain 저장소 → Mock 프로바이더 → 생체인증 →
+   AuthSession 파사드 → 데모 앱 스캐폴드 → 뷰 레이어 → README)로 구현 계획 작성.
+   이 과정에서 스펙에는 있지만 계획에서 빠진 `canAuthenticate()` 가드를 발견해 계획에 반영
+3. **구현**: git worktree에서 태스크마다 구현 서브에이전트 1개 + 리뷰 서브에이전트 1개
+   (스펙 일치·코드 품질)를 붙여 진행, 마지막에 브랜치 전체 리뷰 → 수정 → 재리뷰
+   (서브에이전트 총 19개 디스패치, iOS 시뮬레이터 도구 66회 호출)
+4. **최종 리뷰에서 잡은 것**: 태스크 단위 리뷰로는 안 보이던 교차 태스크 통합 버그 9건.
+   재실행 후 토큰 리프레시 실패, 생체인증 미등록 시 빠져나갈 수 없는 잠금 화면,
+   뷰모델 메모리 누수 등. 초기에 "정상 처리"로 기록했던 잠금 화면 동작이 실제로는
+   탈출구 없는 버그였다는 것도 이 단계에서 정정됨
+5. **결과**: SDK 테스트 27/27 통과, 서드파티 런타임 의존성 없음. 시뮬레이터에서
+   로그인 → 잘못된 비밀번호 → 재실행 시 생체인증 잠금 → 로그아웃 흐름을 직접 눌러보며
+   스크린샷으로 남기고, 자동화가 안 되는 시나리오(Face ID 매칭, 토큰 만료)는
+   재현 절차를 문서화해 [PR #1](https://github.com/YangJinmo/SecureAuthKit/pull/1)로 올림
 
 ## 로드 방식: 자동 vs 조건부 vs 명시적 호출
 
-"설정은 됐는데 왜 실행 이력이 없는 항목이 있는가"를 이해하려면 이 레포의
-파일들이 세 가지 다른 방식으로 작동한다는 걸 구분해야 합니다.
+"설정은 됐는데 왜 실행 이력이 없는 항목이 있는가"를 이해하려면
+[superclaude-config](https://github.com/YangJinmo/superclaude-config)의 파일들이
+세 가지 다른 방식으로 작동한다는 걸 구분해야 합니다.
 
 ### 1. 항상 자동으로 로드됨 — 별도 호출 불필요
 
 `CLAUDE.md`가 세션 시작 시 나머지 파일을 전부 `@import`하기 때문에,
-아래는 매 세션 시작할 때마다 자동으로 컨텍스트에 실립니다. 사용자가 명령어를
-치거나 파일을 지정할 필요가 없습니다.
+아래는 매 세션 시작할 때마다 자동으로 컨텍스트에 실립니다.
 
 - `RULES.md`, `PRINCIPLES.md`, `FLAGS.md`, `RESEARCH_CONFIG.md`
 - `MODE_*.md` 전부
@@ -141,25 +125,21 @@ Playwright). **다만 이 중 실제 호출 이력이 확인된 것은 Playwrigh
 
 **항상 적용되는 규칙** — `RULES.md`, `PRINCIPLES.md`. "Git status 먼저 확인",
 "쓰기 전에 읽기", "근거 없는 주장 금지" 같이 조건 없이 매 세션 지키려고
-하는 행동 규칙입니다. 특정 트리거가 있어야 켜지는 게 아니라 항상 배경에서
-작동합니다.
+하는 행동 규칙입니다.
 
 **조건이 맞으면 자동으로 전환되는 모드/라우팅** — `MODE_*.md`, `MCP_*.md`.
 각 파일에는 "Activation Triggers"가 정의돼 있고 (예: "모호한 요청 →
 Brainstorming", "브라우저 테스트 필요 → Playwright"), 대화 맥락에서 그
 조건이 감지되면 Claude가 스스로 판단해서 해당 모드/서버로 전환합니다.
-사용자가 "Brainstorming 모드 켜줘"라고 호출하는 게 아니라, 트리거 조건이
-항상 감시되고 있다가 맞으면 자동으로 적용되는 방식입니다. 위 "구성은
-됐지만 아직 사용 안 한 기능" 목록에 있는 항목들도 이 트리거 자체는 매
-세션 감시되고 있었지만, 실제로 조건이 뚜렷하게 걸린 적이 없었던 것뿐입니다.
+아래 "구성은 됐지만 아직 사용 안 한 기능"의 항목들도 트리거 자체는 매 세션
+감시되고 있었지만, 실제로 조건이 뚜렷하게 걸린 적이 없었던 것뿐입니다.
 
 ### 2. 명시적으로 호출해야 작동함
 
-- **Skills** (`Skills/tube-info`, `Skills/app-mockup`) — 컨텍스트에 자동으로
-  실리지 않습니다. 요청 내용이 스킬 설명과 매칭되거나 `/이름`을 직접 입력해야
-  Claude가 해당 스킬 파일을 불러와 그 지침을 따릅니다.
-- **Commands** (`Commands/tube-info.md`, `Commands/app-mockup.md`) — 슬래시
-  명령을 직접 입력해야 실행됩니다.
+- **Skills** — 컨텍스트에 자동으로 실리지 않습니다. 요청 내용이 스킬 설명과
+  매칭되거나 `/이름`을 직접 입력해야 Claude가 해당 스킬 파일을 불러와 그
+  지침을 따릅니다.
+- **Commands** — 슬래시 명령을 직접 입력해야 실행됩니다.
 - **MCP 서버의 실제 도구 호출** — `MCP_*.md`의 라우팅 규칙은 항상 로드돼
   있지만, 실제로 그 서버의 도구를 호출할지는 매번 그때그때 판단하는
   런타임 결정이고, 서버가 연결돼 있어야 합니다 (연결이 끊기면 라우팅
@@ -167,14 +147,14 @@ Brainstorming", "브라우저 테스트 필요 → Playwright"), 대화 맥락�
 
 ## 구성은 됐지만 아직 사용 안 한 기능
 
-레포에 설정은 돼 있지만 세션 로그상 실행 이력이 없는 기능입니다. 뭘 더
-써볼 수 있는지 참고용으로 남겨둡니다.
+설정은 돼 있지만 세션 로그상 실행 이력이 없는 기능입니다. 뭘 더 써볼 수
+있는지 참고용으로 남겨둡니다.
 
 ### Behavioral Modes
 
 | 모드 | 용도 |
 |---|---|
-| [Brainstorming](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_Brainstorming.md) | 모호한 요청에 질문을 던져 요구사항을 구체화 |
+| [Brainstorming](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_Brainstorming.md) | 모호한 요청에 질문을 던져 요구사항을 구체화 (같은 역할을 Superpowers `brainstorming` 스킬이 대신 수행 — 사례 5) |
 | [Introspection](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_Introspection.md) | 에러나 복잡한 판단 이후 스스로의 추론 과정을 되짚어봄 |
 | [Deep Research](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_DeepResearch.md) | 여러 출처를 병렬 검색·신뢰도 채점해 근거 기반으로 종합 |
 | [Token Efficiency](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/modes/MODE_Token_Efficiency.md) | 컨텍스트가 부족할 때 기호·축약어로 압축해 커뮤니케이션 |
@@ -192,9 +172,10 @@ Brainstorming", "브라우저 테스트 필요 → Playwright"), 대화 맥락�
 | [Magic](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/mcp/MCP_Magic.md) | 21st.dev 패턴 기반 UI 컴포넌트 생성 |
 | [Tavily](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/master/src/superclaude/mcp/MCP_Tavily.md) | 실시간 웹 검색 |
 
-## 왜 이렇게 구성했는가
+## 왜 이렇게 정리했는가
+
 반복적인 컨텍스트 손실, 임시방편적 코드 수정, 불필요한 verbose 출력
 같은 문제를 겪은 뒤, 작업을 태스크 단위로 쪼개고 검증 가능한 방식으로
-진행하는 것을 우선했습니다. 위 항목들은 실제 세션 로그에 남은 사용
-이력을 기준으로 정리한 것이며, 설정만 해두고 실행 기록이 없는 기능
-(예: 일부 MCP 서버, 특정 리서치/분석 스킬)은 포함하지 않았습니다.
+진행하는 것을 우선했습니다. 설정을 많이 붙여두는 것과 실제로 쓰는 것은
+다르기 때문에, 이 레포는 설정 목록이 아니라 세션 로그에 남은 사용 이력을
+기준으로 정리합니다.
