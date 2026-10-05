@@ -102,7 +102,7 @@ Playwright). **다만 이 중 실제 호출 이력이 확인된 것은 Playwrigh
 | Skill | 용도 |
 |---|---|
 | [Skills/tube-info](Skills/tube-info/SKILL.md) | TubeAlfred MCP로 유튜브 채널/영상 정보·챕터·전체 자막 요약 |
-| [Skills/app-mockup](Skills/app-mockup/SKILL.md) | 앱 스크린샷을 아이폰/갤럭시 기기 목업 프레임에 합성 |
+| [Skills/app-mockup](Skills/app-mockup/SKILL.md) | 앱 스크린샷을 아이폰/갤럭시 기기 목업 프레임에 합성 (프레임 PNG는 라이선스상 저장소 미포함) |
 
 ### Commands
 
